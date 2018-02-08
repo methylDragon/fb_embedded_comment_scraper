@@ -23,7 +23,7 @@ import csv
 # =============================================================================
 
 if __name__ == "__main__":
-    url = ["www.methyldragon.com"] # INSERT URLS HERE
+    url = ["www.methyldragon.com"] # INSERT URLS TO PARSE HERE
 
 # State the path to your desired .csv file here!
 f = 'comments.csv'

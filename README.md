@@ -9,6 +9,24 @@ It can display nested replies, all in order too, so the .csv reads naturally lik
 It writes to a specified .csv file the parsed data with columns:
 Reply Depth | Link | Description | Total Comments | Username | City | Date-Time | Comment | Likes | Replies
 
+### Usage
+
+Just change the relevant parameters!
+
+```python
+# =============================================================================
+# SET PARAMETERS
+# =============================================================================
+
+if __name__ == "__main__":
+    url = ["www.methyldragon.com"] # INSERT URLS TO PARSE HERE
+
+# State the path to your desired .csv file here!
+f = 'comments.csv'
+```
+
+
+
 ### How it works
 
 I noticed that you can access the source of the iframes that Facebook dynamically generates via embedded JS in a webpage. Said source has JSON data hidden in a mess of text that can be parsed accordingly!

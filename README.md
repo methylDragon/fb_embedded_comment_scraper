@@ -12,3 +12,7 @@ Reply Depth | Link | Description | Total Comments | Username | City | Date-Time 
 ### How it works
 
 I noticed that you can access the source of the iframes that Facebook dynamically generates via embedded JS in a webpage. Said source has JSON data hidden in a mess of text that can be parsed accordingly!
+
+### Applications
+
+I wrote this as part of a bigger project where we wanted to do natural language processing on a dataset of comments. This can help build that dataset!

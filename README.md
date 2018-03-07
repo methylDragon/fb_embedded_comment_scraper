@@ -1,4 +1,6 @@
 # fb_embedded_comment_scraper
+Now updated to be able to pull every comment in every page of a domain (if you input it correctly!)
+
 A scraper for gathering data from Facebook's embedded comment widgets on any number of URLs! It bypasses the Facebook graph API (you don't need an access token) so there's little risk of throttling.
 
 This script extracts JSON data that Facebook uses to power its embedded comment
@@ -19,10 +21,13 @@ Just change the relevant parameters!
 # =============================================================================
 
 if __name__ == "__main__":
-    url = ["www.methyldragon.com"] # INSERT URLS TO PARSE HERE
+    # [[Insert your domains]]
+    source_URLs = ["somesite.com/page/", "methylDragon.com"]
 
-# State the path to your desired .csv file here!
-f = 'comments.csv'
+    # If you want to pull all pages from a site, ensure the site's page
+    # structure is numeric (Eg. somesite.com/page/<NUMBER> )
+
+    start_page = 0
 ```
 
 
@@ -33,4 +38,4 @@ I noticed that you can access the source of the iframes that Facebook dynamicall
 
 ### Applications
 
-I wrote this as part of a bigger project where we wanted to do natural language processing on a dataset of comments. This can help build that dataset!
+I wrote this as part of a bigger project where we wanted to do natural language processing on a dataset of comments. This can help build that dataset, 100k+ comments strong!

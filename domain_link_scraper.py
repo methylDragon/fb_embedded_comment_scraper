@@ -138,6 +138,11 @@ def get_domain_links(domain, start_page = 1, end_page = 99999):
                     return
             else:
                 print("Page #" + str(page_counter) + " fetched")
+
+                # Note: I use yield here so we don't actually have to
+                # wait to get all the links before parsing them
+                # So instead we can just parse them on a page-by-page
+                # basis! Generators are great!
                 yield get_links(page_url, True, domain.split("/")[0])
 
         # Or random errors occur that stop the page fetch

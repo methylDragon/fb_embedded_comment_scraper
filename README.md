@@ -4,11 +4,11 @@ Now updated to be able to pull every comment in every page of a domain (if you i
 A scraper for gathering data from Facebook's embedded comment widgets on any number of URLs! It bypasses the Facebook graph API (you don't need an access token) so there's little risk of throttling.
 
 This script extracts JSON data that Facebook uses to power its embedded comment
-platform, recursively picking out comments. (TO A MAXIMUM OF 100 COMMENTS PER LINK!)
+platform, recursively picking out comments. (TO A MAXIMUM OF 100 TOP LEVEL COMMENTS PER LINK!)
 
 It can display nested replies, all in order too, so the .csv reads naturally like the Facebook comment feed!
 
-It writes to a specified .csv file the parsed data with columns:
+It writes to a specified .csv file the parsed data with columns:    
 Reply Depth | Link | Description | Total Comments | Username | City | Date-Time | Comment | Likes | Replies
 
 ### Usage

@@ -50,7 +50,7 @@ logging.getLogger("bs4").setLevel(logging.ERROR)
 if __name__ == "__main__":
 
     # [[Insert your domains]]
-    source_URLs = ["somesite.com/page/", "methylDragon.com"]
+    source_URLs = ["https://www.allsingaporestuff.com/node?page="]
 
     # If you want to pull all pages from a site, ensure the site's page
     # structure is numeric (Eg. somesite.com/page/<NUMBER> )
@@ -84,7 +84,7 @@ print('''
                    /| } O.=.O { |\\ 
                   /´ \ \_ ~ _/ / `\\
                 /´ |  \-/ ~ \-/  | `\\
-                |   |  /\\ //\  |   | 
+                |   |  /\\\ //\\  |   | 
                  \|\|\/-""-""-\/|/|/
                          ______/ /
                          '------'
@@ -231,6 +231,7 @@ for source in source_URLs:
         # =============================================================================
 
         # Generate url_lists for every page in source
+        # get_domain_links is a generator function!
         for url_list in get_domain_links(source, start_page):
             urls = url_list
             page_counter += 1

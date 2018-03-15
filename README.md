@@ -21,7 +21,17 @@ Just change the relevant parameters!
 # =============================================================================
 
 if __name__ == "__main__":
-    # [[Insert your domains]]
+    
+    """
+    NOTE: Make sure there's no http:// or https:// in the source_URL list
+    
+    If you want to crawl something like
+    "troublesome_site.com/page=<??>/other_stuff"
+    
+    Write it as a tuple! ("troublesome_site.com/page=","/other_stuff)
+    """
+    
+    # [[INSERT YOUR DOMAINS HERE!]]
     source_URLs = ["somesite.com/page/", "methylDragon.com"]
 
     # If you want to pull all pages from a site, ensure the site's page
@@ -35,6 +45,8 @@ if __name__ == "__main__":
 ### How it works
 
 I noticed that you can access the source of the iframes that Facebook dynamically generates via embedded JS in a webpage. Said source has JSON data hidden in a mess of text that can be parsed accordingly!
+
+
 
 ### Applications
 

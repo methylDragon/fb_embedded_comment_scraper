@@ -111,10 +111,14 @@ def get_domain_links(domain, start_page = 1, end_page = 99999):
         domain = domain[8:]
 
     # Return the domain itself! (In case you just want to grab a single article)
-    if type(domain) == str:
-        yield [str("http://" + str(domain))], "BASE"
-    else:
-        yield [str("http://" + str(domain[0]) + str(domain[1]))], "BASE"
+    try:
+        if type(domain) == str:
+            yield [str("http://" + str(domain))], "BASE"
+        else:
+            yield [str("http://" + str(domain[0]) + str(domain[1]))], "BASE"
+    except GeneratorExit:
+        print("\nCleaning up domain scraper")
+        return
 
     # Initialise counters
     error_limit = 0
@@ -176,7 +180,7 @@ def get_domain_links(domain, start_page = 1, end_page = 99999):
 
             # Final try
             page = requests.get(page_url, headers = user_agent_header)
-            print("FETCH STATUS:", page.status_code)
+            print("\nFETCH STATUS:", page.status_code)
 
 
             if page.status_code != 200:
@@ -186,17 +190,24 @@ def get_domain_links(domain, start_page = 1, end_page = 99999):
                     print("URL FETCH ERROR LIMIT REACHED, BREAKING")
                     return
             else:
-                print("Page #" + str(page_counter) + " fetched")
+                print("\nPage #" + str(page_counter) + " fetched")
 
                 # Note: I use yield here so we don't actually have to
                 # wait to get all the links before parsing them
                 # So instead we can just parse them on a page-by-page
                 # basis! Generators are great!
                 if type(domain) == str:
-                    yield get_links(page_url, True, domain.split("/")[0]), str(page_counter)
+                    try:
+                        yield get_links(page_url, True, domain.split("/")[0]), str(page_counter)
+                    except GeneratorExit:
+                        print("\nCleaning up domain scraper")
+                        return
                 else:
                     try:
                         yield get_links(page_url, True, domain[0].split("/")[0]), str(page_counter)
+                    except GeneratorExit:
+                        print("\nCleaning up domain scraper")
+                        return
                     except:
                         pass
 

@@ -34,19 +34,13 @@ from datetime import datetime
 import requests
 import json
 import csv
-from domain_link_scraper import get_links, get_domain_links
+from domain_link_scraper import get_domain_links
 
-import random
 import sys
 import logging
 import socket
 import time
 from timeit import default_timer as timer
-
-user_agent_header = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'}
-
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("bs4").setLevel(logging.ERROR)
 
 # =============================================================================
 # SET PARAMETERS HERE!
@@ -60,13 +54,22 @@ if __name__ == "__main__":
     If you want to crawl something like
     "troublesome_site.com/page=<??>/other_stuff"
 
-    Write it as a tuple! ("troublesome_site.com/page=","/other_stuff")
+    Write it as a tuple! ("troublesome_site.com/page=","/other_stuff)
     """
 
     # [[INSERT YOUR DOMAINS HERE!]]
     # SG, ASIAPACIFIC, HEALTH, COMMENTARY,
-    source_URLs = ["somesite.com/page=",
-                   ("troublesome_site.com/page=","/other_stuff")]
+    source_URLs = [# [CNA] SG
+                   #("www.channelnewsasia.com/archives/8396078/news?pageNum=","&channelId=7469254"),
+                   
+                   # [CNA] ASIA PACIFIC
+                   ("www.channelnewsasia.com/archives/8395764/news?pageNum=","&channelId=7469252"),
+                   
+                   # [CNA] HEALTH
+                   ("www.channelnewsasia.com/archives/8395790/news?pageNum=","&channelId=7469578"),
+                   
+                   # [CNA] COMMENTARY
+                   ("www.channelnewsasia.com/archives/8550254/news?pageNum=","&channelId=8396306")]
 
     # If you want to pull all pages from a site, ensure the site's page
     # structure is numeric (Eg. somesite.com/page/<NUMBER> )
@@ -93,6 +96,13 @@ user_agent_header = {'headers':'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:51.0)
 
 # Global comment total
 overall_comment_counter = 0
+
+# User agent header setting
+user_agent_header = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'}
+
+# Let's turn off annoying messages, shall we?
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("bs4").setLevel(logging.ERROR)
 
 # =============================================================================
 # Useful Functions
@@ -124,7 +134,7 @@ def description(output, url):
 
 
 #SWAG
-print('''
+methylDragon = '''
 
                        .     .
                     .  |\-^-/|  .
@@ -137,12 +147,13 @@ print('''
                          '------'
            _   _        _  ___
  _ __  ___| |_| |_ _  _| ||   \ _ _ __ _ __ _ ___ _ _
-| '  \/ -_)  _| ' \ || | || |) | '_/ _` / _` / _ \ ' \
+| '  \/ -_)  _| ' \ || | || |) | '_/ _` / _` / _ \ ' \\
 |_|_|_\___|\__|_||_\_, |_||___/|_| \__,_\__, \___/_||_|
                    |__/                 |___/
 -------------------------------------------------------
-                github.com/methylDragon\n''')
+                github.com/methylDragon\n'''
 
+print(methylDragon)
 print("Facebook Embedded Comment Scraper by methylDragon!")
 for i in range(5):
     print("." * (5 - i))
@@ -157,31 +168,31 @@ time.sleep(1)
 # =============================================================================
 
 # This function fetches comments from the nested dictionary from the JSON from each URL!
-def fetch_comment(i, reply_depth):
-    userID = parsed_json[0]["props"]["comments"]["idMap"][str(i)]["authorID"]
+def fetch_comment(comment_id, reply_depth):
+    user_id = parsed_json[0]["props"]["comments"]["idMap"][str(comment_id)]["authorID"]
 
     # Default 0, unless the comment is a child of a parent comment
     reply_depth = reply_depth
 
     try:
-        username = parsed_json[0]["props"]["comments"]["idMap"][str(userID)]["name"]
+        username = parsed_json[0]["props"]["comments"]["idMap"][str(user_id)]["name"]
     except:
         username = "<ERROR> no_name"
 
     try:
-        city = parsed_json[0]["props"]["comments"]["idMap"][str(userID)]["bio"]["stats"]["city"]["name"]
+        city = parsed_json[0]["props"]["comments"]["idMap"][str(user_id)]["bio"]["stats"]["city"]["name"]
     except:
         city = "<ERROR> no_city"
 
-    comment_text = parsed_json[0]["props"]["comments"]["idMap"][str(i)]["body"]["text"]
-    timestamp = parsed_json[0]["props"]["comments"]["idMap"][str(i)]["timestamp"]["text"]
+    comment_text = parsed_json[0]["props"]["comments"]["idMap"][str(comment_id)]["body"]["text"]
+    timestamp = parsed_json[0]["props"]["comments"]["idMap"][str(comment_id)]["timestamp"]["text"]
 
     # NOTE: You might have to change the time format depending on your system
     parsed_timestamp = datetime.strptime(timestamp, time_format)
-    likes = parsed_json[0]["props"]["comments"]["idMap"][str(i)]["likeCount"]
+    likes = parsed_json[0]["props"]["comments"]["idMap"][str(comment_id)]["likeCount"]
 
     try:
-        replies = parsed_json[0]["props"]["comments"]["idMap"][str(i)]["public_replies"]["totalCount"]
+        replies = parsed_json[0]["props"]["comments"]["idMap"][str(comment_id)]["public_replies"]["totalCount"]
     except:
         replies = 0
 
@@ -238,6 +249,12 @@ skips = 0
 skip_loop_flag = False
 skip_loop_counter = 0
 
+# This is for breaking out of a domain if too many pages were parsed with
+# no new comments found. (It's the second layer of safeguarding against
+# being stuck in a domain forever)
+no_comment_flag = False
+no_comment_counter = 0
+
 # =============================================================================
 # LOOP THROUGH EACH STATED DOMAIN URL
 # =============================================================================
@@ -249,7 +266,8 @@ for source in source_URLs:
     section_counter = 0 # Unique sections
     populated_section_counter = 0 # Useful sections
     page_counter = 0 # Pages parsed
-    comment_counter = 0
+    comment_counter = 0 # Comments pulled from source
+    no_comment_counter = 0 # Source Escape counter reset
 
     # Strip http:// and https://
     if source[:7] == "http://":
@@ -296,24 +314,43 @@ for source in source_URLs:
             # page's url list
             if skip_loop_flag == True:
                 skip_loop_counter += 1
-                print("No new articles found! Streak: " + str(skip_loop_counter))
+                print("{! WARNING !} No New Pages! Streak:", skip_loop_counter)
             else:
                 skip_loop_counter = 0
+
+            # Count the number of times no new comments were found in an entire page's url list
+            if no_comment_flag == True:
+                no_comment_counter += 1
+            else:
+                no_comment_counter = 0
 
             # If it crosses 5 consecutive times, stop searching the domain and move on
             if skip_loop_counter >= 5:
                 print("\n\nSTOPPING SEARCH AFTER TOO MANY TIMES OF NO NEW ARTICLES CONSECUTIVELY FOUND")
+                print("\nMoving on to next domain...")
+
+                skip_loop_counter = 0
+
+                break
+
+            # If it crosses 500 consecutive times, stop searching the domain and move on
+            if no_comment_counter >= 500:
+                print("\n\nSTOPPING SEARCH AFTER TOO MANY TIMES OF NO NEW COMMENTS CONSECUTIVELY FOUND")
                 print("\nMoving on to next domain...\n\n")
+
+                no_comment_counter = 0
+
                 break
 
             skip_loop_flag = True
+            no_comment_flag = True
 
             # =============================================================================
             # LOOP THROUGH EACH LINK IN THE LIST OF URLs
             # =============================================================================
 
             # And run through every Facebook comment widget in every link in each page
-            for i, url in enumerate(urls):
+            for url in urls:
 
                 # If we've parsed a comment section before, skip it
                 if url in parsed_urls:
@@ -321,7 +358,7 @@ for source in source_URLs:
                     continue
                 else:
                     # Otherwise, add to memoisation list
-                    skip_loop_flag = False
+                    skip_loop_flag = False # New article found in page!
                     parsed_urls.append(str(url))
                     section_counter += 1
 
@@ -334,6 +371,7 @@ for source in source_URLs:
 
                 # Timing checkpoint!
                 checkpoint = timer()
+
                 # Print running summary
                 print("\n\nRunning Summary for: " + str(cleaned_source))
                 print("------------------")
@@ -346,6 +384,11 @@ for source in source_URLs:
                 + " | Total Comments: " + str(comment_counter))
                 print("------------------\n")
 
+                if skip_loop_flag == True:
+                    print("{! WARNING !} No New Pages! Streak:", skip_loop_counter)
+                if no_comment_counter > 1 == True:
+                    print("{! WARNING !} No New Comments! Streak:", no_comment_counter)
+
                 # Empty variables before each iteration
                 page = None
                 raw_source = None
@@ -353,7 +396,7 @@ for source in source_URLs:
                 parsed_json = None
 
                 # Download the page
-                page = requests.get('https://www.facebook.com/plugins/feedback.php?api_key&href=' + urls[i] + '&numposts=100', headers = user_agent_header)
+                page = requests.get('https://www.facebook.com/plugins/feedback.php?api_key&href=' + url + '&numposts=100', headers = user_agent_header)
 
                 # Extract the HTML source code
                 raw_source = page.text
@@ -395,15 +438,16 @@ for source in source_URLs:
                     #print(parsed_json[0]["props"]["meta"]["href"])
                     #print("\nDescription: ",end="")
 
-                    print("\nArticle: " + urls[i] + "\n")
+                    print("\nArticle: " + url + "\n")
 
                     try:
                         # Print name
                         print(parsed_json[0]["props"]["comments"]["idMap"][str(page_id)]["name"])
                         print()
                         populated_section_counter += 1
+                        no_comment_flag = False # Comments were found in page!
                     except:
-                        print("NO COMMENTS FOUND")
+                        print("{ NO COMMENTS FOUND }")
 
                     #print("------------------")
                     #print("Total Comments: ",end="")
@@ -416,19 +460,19 @@ for source in source_URLs:
                     reply_tracker = []
 
                     # Analyse comments and populate the comment list with the results
-                    for i, j in enumerate(comment_ids):
+                    for comment_id in comment_ids:
                         reply_depth = 0
-                        append_comment(comments, j, reply_depth, comment_count)
+                        append_comment(comments, comment_id, reply_depth, comment_count)
 
                     #print("\nComment analysis complete!")
                     #print("Initialising comment writing\n")
 
                     # Write comment data to .csv
-                    for i, j in enumerate(comments):
+                    for comment_index, comment in enumerate(comments, 1):
 
                         # Append a line to the .csv per comment
                         line = (# Reply depth
-                                str(j["reply_depth"])
+                                str(comment["reply_depth"])
                                 + "|@@@|"
 
                                 # Link
@@ -440,34 +484,34 @@ for source in source_URLs:
                                 + "|@@@|"
 
                                 # Comment number (out of total comments in post)
-                                + str(i + 1)
+                                + str(comment_index)
                                 + " of "
                                 + str(parsed_json[0]["props"]["meta"]["totalCount"]
                                 + len(reply_tracker))
                                 + "|@@@|"
 
                                 # Commenter name
-                                + str(j["username"])
+                                + str(comment["username"])
                                 + "|@@@|"
 
                                 # Commenter city
-                                + str(j["city"])
+                                + str(comment["city"])
                                 + "|@@@|"
 
                                 # Timestamp
-                                + str(j["date_time"])
+                                + str(comment["date_time"])
                                 + "|@@@|"
 
                                 # Comment text
-                                + str(j["comment_text"])
+                                + str(comment["comment_text"])
                                 + "|@@@|"
 
                                 # Likes comment has
-                                + str(j["likes"])
+                                + str(comment["likes"])
                                 + "|@@@|"
 
                                 # Replies comment has
-                                + str(j["replies"])
+                                + str(comment["replies"])
                                 )
 
                         # Increment intra-source comment total
@@ -476,7 +520,7 @@ for source in source_URLs:
                         # Write the comment into the .csv
                         writer.writerow(line.split(sep="|@@@|"))
                         # Report back
-                        print("Completed writing comment #" + str(i + 1))
+                        print("Completed writing comment #" + str(comment_index))
                 else:
                     # Report error if article data is empty
                     print("ERROR: Could not parse article!")
@@ -487,8 +531,13 @@ for source in source_URLs:
 
 # Timing checkpoint!
 checkpoint = timer()
+
+print(methylDragon[:101])
+
 # Print concluding summary
-print("Summary:")
+print("\n------------------")
+print("Concluding Summary:")
+print("------------------\n")
 print("Total Parsed URLs:", str(len(parsed_urls)))
 print("Error Skips:", skips)
 print("Total Time:", str(round(checkpoint - start, 2)))

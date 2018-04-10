@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-fb_embedded_comment_scraper()
+fb_embedded_comment_scraper.py
 @author: methylDragon
 
                                    .     .
@@ -92,7 +92,8 @@ else:
     time_format = "%b %d, %Y %I:%M%p"
 
 # Agent header for reducing 403 errors (makes you look like a user)
-user_agent_header = {'headers':'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:51.0) Gecko/20100101 Firefox/51.0'}
+# THIS ONE IS DEPRECIATED, but I'll keep it around just in case
+# user_agent_header = {'headers':'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:51.0) Gecko/20100101 Firefox/51.0'}
 
 # Global comment total
 overall_comment_counter = 0
@@ -103,6 +104,22 @@ user_agent_header = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11
 # Let's turn off annoying messages, shall we?
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("bs4").setLevel(logging.ERROR)
+
+# This is for pages that don't throw a 404 after you exceed their content
+# pages. The domain_link_scraper will still return values, but they'll already
+# be parsed.
+skip_loop_flag = False
+skip_loop_counter = 0
+
+# This is for breaking out of a domain if too many pages were parsed with
+# no new comments found. (It's the second layer of safeguarding against
+# being stuck in a domain forever)
+no_comment_flag = False
+no_comment_counter = 0
+
+# MEMOISATION~~~~
+parsed_urls = []
+skips = 0
 
 # =============================================================================
 # Useful Functions
@@ -236,26 +253,6 @@ def append_comment(comment_list, comment_id, reply_depth, comment_counter):
     return
 
 # =============================================================================
-# START LOOP
-# =============================================================================
-
-# MEMOISATION~~~~
-parsed_urls = []
-skips = 0
-
-# This is for pages that don't throw a 404 after you exceed their content
-# pages. The domain_link_scraper will still return values, but they'll already
-# be parsed.
-skip_loop_flag = False
-skip_loop_counter = 0
-
-# This is for breaking out of a domain if too many pages were parsed with
-# no new comments found. (It's the second layer of safeguarding against
-# being stuck in a domain forever)
-no_comment_flag = False
-no_comment_counter = 0
-
-# =============================================================================
 # LOOP THROUGH EACH STATED DOMAIN URL
 # =============================================================================
 
@@ -333,8 +330,8 @@ for source in source_URLs:
 
                 break
 
-            # If it crosses 500 consecutive times, stop searching the domain and move on
-            if no_comment_counter >= 500:
+            # If it crosses 100 consecutive times, stop searching the domain and move on
+            if no_comment_counter >= 100:
                 print("\n\nSTOPPING SEARCH AFTER TOO MANY TIMES OF NO NEW COMMENTS CONSECUTIVELY FOUND")
                 print("\nMoving on to next domain...\n\n")
 

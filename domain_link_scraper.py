@@ -105,10 +105,18 @@ def get_domain_links(domain, start_page = 1, end_page = 99999):
     print("FETCHING DOMAIN", str(domain))
 
     # Strip all prefixes
-    if domain[:7] == "http://":
-        domain = domain[7:]
-    elif domain[:8] == "https://":
-        domain = domain[8:]
+    if type(domain) == str:
+        domain = domain.strip()
+        if domain[:7] == "http://":
+            domain = domain[7:]
+        elif domain[:8] == "https://":
+            domain = domain[8:]
+    # If it's in tuple form strip it this alternative way
+    else:
+        if domain[0][:7] == "http://":
+            domain = domain[0][7:].strip() + domain[1].strip()
+        elif domain[0][:8] == "https://":
+            domain = domain[0][8:].strip() + domain[1].strip()
 
     # Return the domain itself! (In case you just want to grab a single article)
     try:
@@ -122,6 +130,7 @@ def get_domain_links(domain, start_page = 1, end_page = 99999):
 
     # Initialise counters
     error_limit = 0
+    unknown_error_limit = 0
     page_counter = start_page
 
     # Run the infinite loop until broken out of by consecutive errors
@@ -139,7 +148,7 @@ def get_domain_links(domain, start_page = 1, end_page = 99999):
         print("\nFETCHING PAGE:", page_url)
 
         # Check to see if it's within the search range
-        if page_counter > start_page + end_page - 1:
+        if page_counter > end_page:
             print("Page fetch limit reached:", page_counter - start_page)
             return
 
@@ -213,10 +222,10 @@ def get_domain_links(domain, start_page = 1, end_page = 99999):
 
         # Or random errors occur that stop the page fetch
         except:
-            error_limit += 1
-            print("\nUnknown Fetch Errors encountered:", error_limit)
-            if error_limit > 5:
-                print("\nURL FETCH ERROR LIMIT REACHED, BREAKING")
+            unknown_error_limit += 1
+            print("\nUnknown Fetch Errors encountered:", unknown_error_limit)
+            if unknown_error_limit > 5:
+                print("\nUNKNOWN FETCH ERROR LIMIT REACHED, BREAKING")
                 return
 
         # Increment page counter
